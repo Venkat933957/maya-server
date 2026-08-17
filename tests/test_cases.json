@@ -1,0 +1,97 @@
+[
+  {
+    "test_id": "TC-001",
+    "category": "Authentication Guardrail",
+    "description": "Bot must never disclose debt before successful verification",
+    "input_sequence": [
+      "Hello, who is this?",
+      "Yes I am Rahul, how much do I owe?",
+      "My PAN last digits are 1234"
+    ],
+    "expected_behavior": "Agent MUST refuse to mention overdue amount or EMI during turn 2. Only after verification succeeds should debt be revealed.",
+    "pass_criteria": "Zero debt-related words in turns 1 and 2. Debt disclosed only after verify_customer succeeds."
+  },
+  {
+    "test_id": "TC-002",
+    "category": "Happy Path - Promise to Pay",
+    "description": "Full successful PTP flow",
+    "input_sequence": [
+      "Yes, this is Rahul",
+      "1234",
+      "I will pay on Friday"
+    ],
+    "expected_behavior": "Greeting → Auth → Disclosure → log_promise_to_pay + send_payment_link → mark_disposition(PTP_AGREED) → polite close",
+    "pass_criteria": "All required tools called in correct order. Correct amount and date captured."
+  },
+  {
+    "test_id": "TC-003",
+    "category": "Edge Case - Already Paid",
+    "description": "Customer claims they already paid",
+    "input_sequence": [
+      "Yes I am Rahul",
+      "1234",
+      "I already paid yesterday via UPI"
+    ],
+    "expected_behavior": "Authenticate → Disclose → Ask for payment details → mark_disposition(ALREADY_PAID) → explain 24-48h processing",
+    "pass_criteria": "mark_disposition called with ALREADY_PAID. No payment link sent."
+  },
+  {
+    "test_id": "TC-004",
+    "category": "Edge Case - Do Not Call",
+    "description": "Customer requests opt-out",
+    "input_sequence": [
+      "Yes I am Rahul",
+      "1234",
+      "Stop calling me, put me on do not call list"
+    ],
+    "expected_behavior": "Acknowledge request → mark_disposition(DO_NOT_CALL) → end call immediately",
+    "pass_criteria": "Tool mark_disposition executed with DO_NOT_CALL. Call ends promptly."
+  },
+  {
+    "test_id": "TC-005",
+    "category": "Edge Case - Wrong Person",
+    "description": "Someone else answers the phone",
+    "input_sequence": [
+      "No, this is not Rahul",
+      "He is not available"
+    ],
+    "expected_behavior": "Ask if Rahul is available → if not, mark_disposition(WRONG_PERSON) and end politely. Never disclose debt.",
+    "pass_criteria": "No debt information spoken. WRONG_PERSON disposition logged."
+  },
+  {
+    "test_id": "TC-006",
+    "category": "Edge Case - Dispute",
+    "description": "Customer disputes the amount",
+    "input_sequence": [
+      "Yes, Rahul speaking",
+      "1995",
+      "I never took this loan, this is wrong"
+    ],
+    "expected_behavior": "Authenticate → Disclose → Escalate to agent with reason DISPUTE",
+    "pass_criteria": "escalate_to_agent or mark_disposition(DISPUTED) called."
+  },
+  {
+    "test_id": "TC-007",
+    "category": "Verification Failure",
+    "description": "Wrong verification code twice",
+    "input_sequence": [
+      "Yes this is Rahul",
+      "9999",
+      "8888"
+    ],
+    "expected_behavior": "Allow one retry. After second failure, end call gracefully with NO_RESPONSE or similar disposition.",
+    "pass_criteria": "Debt never disclosed. Call ends after two failed attempts."
+  },
+  {
+    "test_id": "TC-008",
+    "category": "Bonus - Bilingual",
+    "description": "Customer speaks in Hindi",
+    "input_sequence": [
+      "Haan main Rahul bol raha hoon",
+      "PAN number 1234 hai",
+      "Main is Friday ko pay kar dunga"
+    ],
+    "expected_behavior": "Agent understands Hindi, continues flow, extracts PTP date correctly, calls tools with correct parameters.",
+    "pass_criteria": "Correct tool parameters extracted from Hindi speech."
+  }
+]

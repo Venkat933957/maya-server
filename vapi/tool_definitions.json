@@ -1,0 +1,128 @@
+[
+  {
+    "type": "function",
+    "function": {
+      "name": "verify_customer",
+      "description": "Verifies customer identity against record using last 4 digits of PAN or birth year. MUST be called and must return verified:true before any debt information is disclosed.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "account_id": {
+            "type": "string",
+            "description": "The customer's unique account ID. Always use ACC-88392 for this call."
+          },
+          "verification_code": {
+            "type": "string",
+            "description": "The 4-digit code or birth year provided by the user (e.g. 1234 or 1995)."
+          }
+        },
+        "required": ["account_id", "verification_code"]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "log_promise_to_pay",
+      "description": "Logs the agreed promise-to-pay date and amount committed by the customer.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "account_id": {
+            "type": "string",
+            "description": "Customer account ID (ACC-88392)"
+          },
+          "ptp_date": {
+            "type": "string",
+            "description": "The date the customer agreed to pay. Prefer ISO format YYYY-MM-DD when possible, otherwise keep the spoken form."
+          },
+          "amount": {
+            "type": "number",
+            "description": "The amount the customer agreed to pay (normally 8499)."
+          }
+        },
+        "required": ["account_id", "ptp_date", "amount"]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "send_payment_link",
+      "description": "Triggers an instant payment link via SMS or WhatsApp to the customer's registered mobile number.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "account_id": {
+            "type": "string",
+            "description": "Customer account ID (ACC-88392)"
+          },
+          "channel": {
+            "type": "string",
+            "enum": ["SMS", "WhatsApp", "BOTH"],
+            "description": "Delivery channel for the payment link."
+          }
+        },
+        "required": ["account_id", "channel"]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "mark_disposition",
+      "description": "Logs the final outcome of the call. Must be called at the end of every conversation.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "account_id": {
+            "type": "string",
+            "description": "Customer account ID (ACC-88392)"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "PTP_AGREED",
+              "ALREADY_PAID",
+              "DISPUTED",
+              "HARDSHIP_ESCALATED",
+              "WRONG_PERSON",
+              "DO_NOT_CALL",
+              "NO_RESPONSE",
+              "CALLBACK_REQUESTED",
+              "HOSTILE"
+            ],
+            "description": "Final disposition status of the call."
+          },
+          "notes": {
+            "type": "string",
+            "description": "Optional free-text notes about the conversation."
+          }
+        },
+        "required": ["account_id", "status"]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "escalate_to_agent",
+      "description": "Hands the call over to a human agent for complex cases such as disputes or hardship.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "account_id": {
+            "type": "string",
+            "description": "Customer account ID (ACC-88392)"
+          },
+          "reason": {
+            "type": "string",
+            "enum": ["DISPUTE", "HARDSHIP_REQUEST", "CUSTOMER_REQUEST", "OTHER"],
+            "description": "Reason for escalation."
+          }
+        },
+        "required": ["account_id", "reason"]
+      }
+    }
+  }
+]
